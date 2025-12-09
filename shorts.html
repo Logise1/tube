@@ -193,12 +193,10 @@
                 // Logic: Check 'isShort' property or 'tags' array.
                 // Fallback: If no shorts found (legacy data), show *any* video as short but centered (crop-like effect)
 
-                let shorts = allVideos.filter(v => v.isShort || (v.tags && v.tags.includes('shorts')));
+                let shorts = allVideos.filter(v => v.isShort === true || (v.tags && v.tags.includes('shorts')));
 
-                // If empty (for dev testing), use all videos
-                if (shorts.length === 0 && allVideos.length > 0) {
-                    shorts = allVideos;
-                }
+                // Strict Mode: No fallback to all videos
+                // if (shorts.length === 0 && allVideos.length > 0) ... removed
 
                 if (shorts.length === 0) {
                     container.innerHTML = '<div class="h-screen flex items-center justify-center text-gray-500">No hay Shorts disponibles</div>';
@@ -318,17 +316,37 @@
                         preloadVideo(index + 1);
                         preloadVideo(index - 1);
 
+                        // Increment view count (fire and forget)
+                        if (!video.dataset.viewed) {
+                            video.dataset.viewed = "true";
+                            fetch(`${API_BASE}/videos/details/${video.parentElement.dataset.id}`).catch(() => { });
+                        }
+
+                        // CLEANUP DISTANT VIDEOS
+                        cleanupDistantVideos(index);
+
                     } else {
                         // Pause
                         video.pause();
                         video.currentTime = 0;
-                        // Optional: Free up memory for far off videos? 
-                        // For now, keep simple.
                     }
                 });
             }, options);
 
             document.querySelectorAll('.short-item').forEach(el => observer.observe(el));
+        }
+
+        function cleanupDistantVideos(activeIndex) {
+            document.querySelectorAll('.short-item').forEach(el => {
+                const index = parseInt(el.id.split('-')[1]);
+                if (Math.abs(index - activeIndex) > 1) {
+                    const vid = el.querySelector('video');
+                    if (vid.src) {
+                        vid.removeAttribute('src'); // Unload
+                        vid.load(); // Stop buffering
+                    }
+                }
+            });
         }
 
         function resetAllVideos() {
