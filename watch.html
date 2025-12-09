@@ -187,12 +187,22 @@
             startVideoOwnerId = video.userId; // Save for sub button
 
             // Render basic info
-            document.getElementById('main-player').src = video.url;
+            const player = document.getElementById('main-player');
             document.getElementById('video-title').textContent = video.title;
             document.getElementById('video-desc').textContent = video.description || 'Sin descripción';
             document.getElementById('video-views').textContent = video.views || 0;
             document.getElementById('like-count').textContent = video.likes || 0;
             document.getElementById('video-date').textContent = new Date(video.uploadDate).toLocaleDateString();
+
+            // VIDEO PLAYBACK LOGIC (MSE vs Standard)
+            if (video.segments && video.segments.length > 0 && video.mime && MediaSource.isTypeSupported(video.mime)) {
+                // Use Media Source Extensions for segmented playback
+                console.log('Using MSE Playback');
+                initMSE(player, video.segments, video.mime);
+            } else {
+                // Standard playback
+                player.src = video.url;
+            }
 
             // 2. Get Channel Info
             if (video.userId) {
@@ -237,6 +247,54 @@
                         </a>
                      `).join('');
                 });
+        }
+
+        function initMSE(video, segments, mime) {
+            const ms = new MediaSource();
+            video.src = URL.createObjectURL(ms);
+
+            ms.addEventListener('sourceopen', async () => {
+                const sb = ms.addSourceBuffer(mime);
+                sb.mode = 'sequence';
+
+                try {
+                    // Load Init Segment
+                    const initRes = await fetch(segments[0]);
+                    const initBuf = await initRes.arrayBuffer();
+                    sb.appendBuffer(initBuf);
+
+                    // Load next chunks immediately
+                    if (segments.length > 1) {
+                        await waitForUpdate(sb);
+                        const chunkRes = await fetch(segments[1]);
+                        sb.appendBuffer(await chunkRes.arrayBuffer());
+
+                        // Load rest in background
+                        loadRestSegments(sb, segments.slice(2));
+                    }
+                } catch (e) { console.error('MSE Error', e); }
+            });
+        }
+
+        async function loadRestSegments(sb, urls) {
+            for (const url of urls) {
+                if (sb.updating) await waitForUpdate(sb);
+                try {
+                    const res = await fetch(url);
+                    const buf = await res.arrayBuffer();
+                    sb.appendBuffer(buf);
+                } catch (e) { break; }
+            }
+        }
+
+        function waitForUpdate(sb) {
+            return new Promise(resolve => {
+                if (!sb.updating) return resolve();
+                sb.addEventListener('updateend', function handler() {
+                    sb.removeEventListener('updateend', handler);
+                    resolve();
+                });
+            });
         }
 
         async function loadComments() {
