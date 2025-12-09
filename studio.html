@@ -115,6 +115,10 @@
             status.className = 'text-blue-400';
 
             try {
+                // 0. Check dimensions for Shorts tag
+                status.textContent = 'Analizando video...';
+                const isShort = await checkIsShort(vFile);
+
                 status.textContent = 'Subiendo video (1/3)...';
                 const vUrl = await uploadToYYF(vFile);
 
@@ -124,7 +128,9 @@
                 status.textContent = 'Guardando metadatos (3/3)...';
                 const meta = {
                     title, description: desc, url: vUrl, thumbnail: tUrl,
-                    duration: '0:30', views: 0
+                    duration: '0:30', views: 0,
+                    isShort: isShort,
+                    tags: isShort ? ['shorts'] : []
                 };
 
                 const res = await fetch(WORKER_VIDEO_URL, {
@@ -149,6 +155,22 @@
                 btn.disabled = false;
             }
         });
+
+        // Helper to check video dimensions
+        function checkIsShort(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = function () {
+                    window.URL.revokeObjectURL(video.src);
+                    // Standard definition of vertical video (or square)
+                    const isVertical = video.videoHeight > video.videoWidth;
+                    resolve(isVertical);
+                };
+                video.onerror = () => resolve(false); // Fallback
+                video.src = URL.createObjectURL(file);
+            });
+        }
     </script>
 </body>
 
