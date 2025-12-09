@@ -123,6 +123,12 @@
                                 headers: { 'Authorization': `Bearer ${token}` }
                             });
                             if (!sRes.ok) throw new Error();
+
+                            const data = await sRes.json();
+                            if (data.subscribers) {
+                                document.getElementById('subs-count').textContent = `@${user.username} • ${data.subscribers} suscriptores`;
+                            }
+
                         } catch (e) {
                             alert('Error al suscribirse');
                             subBtn.innerText = 'Suscribirse';

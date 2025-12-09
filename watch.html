@@ -318,7 +318,12 @@
                     const err = await res.json();
                     throw new Error(err.error || 'Error');
                 }
-                // Si es éxito, mantener estado.
+
+                // Success: Update UI
+                const data = await res.json();
+                if (data.subscribers) {
+                    document.getElementById('channel-subs').textContent = `${data.subscribers} suscriptores`;
+                }
             } catch (e) {
                 alert('Error: ' + e.message);
                 // Revert

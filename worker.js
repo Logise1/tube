@@ -308,11 +308,23 @@ async function postVideo(request, headers, user) {
 
 async function getVideoDetails(videoId, headers) {
   try {
-    const response = await fetch(`${FIREBASE_RTDB_URL}/videos/${videoId}.json`);
+    const videoUrl = `${FIREBASE_RTDB_URL}/videos/${videoId}.json?auth=${FIREBASE_SECRET}`;
+    const response = await fetch(videoUrl);
     const video = await response.json();
-    if (!video) return new Response(JSON.stringify({ error: 'Video no encontrado' }), { status: 404, headers });
-    return new Response(JSON.stringify({ id: videoId, ...video }), { status: 200, headers });
-  } catch (e) { return new Response(JSON.stringify({ error: 'Error fetching video' }), { status: 500, headers }); }
+
+    if (!video) return new Response(JSON.stringify({ error: 'Video no encontrado' }), { status: 404, headers: CORS_HEADERS }); // Use global headers
+
+    // Incrementar vistas
+    const newViews = (video.views || 0) + 1;
+    // No esperamos a que termine para responder rápido (fire and forget), pero idealmente deberíamos si es crítico.
+    // Para asegurar consistencia visual inmediata, devolvemos el valor incrementado.
+    fetch(`${FIREBASE_RTDB_URL}/videos/${videoId}/views.json?auth=${FIREBASE_SECRET}`, {
+      method: 'PUT',
+      body: JSON.stringify(newViews)
+    }).catch(console.error);
+
+    return new Response(JSON.stringify({ id: videoId, ...video, views: newViews }), { status: 200, headers: CORS_HEADERS }); // Return incremented views
+  } catch (e) { return new Response(JSON.stringify({ error: 'Error fetching video' }), { status: 500, headers: CORS_HEADERS }); }
 }
 
 async function getComments(videoId, headers) {
