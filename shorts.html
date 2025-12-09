@@ -272,14 +272,22 @@
             function renderShorts(videos) {
                 container.innerHTML = videos.map((v, i) => `
                 <div class="short-item" data-id="${v.id}" id="short-${i}">
-                    <video 
-                        data-src="${v.url}" 
-                        loop 
-                        playsinline 
-                        poster="${v.thumbnail || ''}"
-                        class="cursor-pointer"
-                        onclick="togglePlay(this)"
-                    ></video>
+                    <div class="video-wrapper relative w-full h-full">
+                        <video 
+                            data-src="${v.url}" 
+                            data-segments='${JSON.stringify(v.segments || [])}'
+                            data-mime="${v.mime || ''}"
+                            loop 
+                            playsinline 
+                            poster="${v.thumbnail || ''}"
+                            class="cursor-pointer w-full h-full object-cover"
+                            onclick="togglePlay(this)"
+                        ></video>
+                        <!-- Custom Progress Bar -->
+                        <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-600/50 z-20">
+                             <div class="h-full bg-red-600 progress-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
                     
                     <div class="play-icon">
                          <svg class="w-10 h-10 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -336,17 +344,82 @@
                 const el = document.getElementById(`short-${index}`);
                 if (!el) return;
                 const vid = el.querySelector('video');
-                if (vid && !vid.src && vid.dataset.src) {
+
+                if (vid.src && vid.src.startsWith('blob:')) return; // Already MSE init
+                if (vid.src && vid.currentSrc) return; // Already standard load
+
+                const segments = JSON.parse(vid.dataset.segments || '[]');
+                const mime = vid.dataset.mime;
+
+                // Prioritize MSE if segments exist
+                if (segments.length > 0 && mime && MediaSource.isTypeSupported(mime)) {
+                    initMSE(vid, segments, mime);
+                } else if (vid.dataset.src) {
+                    // Fallback to standard
                     vid.src = vid.dataset.src;
                     vid.load();
                 }
+            }
+
+            function initMSE(video, segments, mime) {
+                const ms = new MediaSource();
+                video.src = URL.createObjectURL(ms);
+
+                ms.addEventListener('sourceopen', async () => {
+                    const sb = ms.addSourceBuffer(mime);
+                    sb.mode = 'sequence';
+
+                    try {
+                        const initRes = await fetch(segments[0]);
+                        const initBuf = await initRes.arrayBuffer();
+                        sb.appendBuffer(initBuf);
+
+                        // Load next chunks immediately
+                        if (segments.length > 1) {
+                            await waitForUpdate(sb);
+                            const chunkRes = await fetch(segments[1]);
+                            sb.appendBuffer(await chunkRes.arrayBuffer());
+
+                            // Load rest in background
+                            loadRestSegments(sb, segments.slice(2));
+                        }
+                    } catch (e) { console.error('MSE Error', e); }
+                });
+
+                video.ontimeupdate = () => {
+                    const bar = video.parentElement.querySelector('.progress-bar');
+                    if (bar && video.duration) {
+                        bar.style.width = (video.currentTime / video.duration) * 100 + '%';
+                    }
+                };
+            }
+
+            async function loadRestSegments(sb, urls) {
+                for (const url of urls) {
+                    if (sb.updating) await waitForUpdate(sb);
+                    try {
+                        const res = await fetch(url);
+                        const buf = await res.arrayBuffer();
+                        sb.appendBuffer(buf);
+                    } catch (e) { break; }
+                }
+            }
+
+            function waitForUpdate(sb) {
+                return new Promise(resolve => {
+                    if (!sb.updating) return resolve();
+                    sb.addEventListener('updateend', function handler() {
+                        sb.removeEventListener('updateend', handler);
+                        resolve();
+                    });
+                });
             }
 
             // --- Logic for Infinite Scroll / Auto Play ---
             function setupObserver() {
                 const options = {
                     root: container,
-                    threshold: 0.6 // Mostly visible
+                    threshold: 0.6
                 };
 
                 const observer = new IntersectionObserver((entries) => {
@@ -356,33 +429,30 @@
 
                         if (entry.isIntersecting) {
                             // Ensure src is set
-                            if (!video.src) {
-                                video.src = video.dataset.src;
-                                video.load();
-                            }
+                            preloadVideo(index);
 
                             // Play
                             resetAllVideos();
-                            video.play().catch(e => console.log('Autoplay prevented', e));
+                            // For MSE, we might need to verify readyState
+                            const playPromise = video.play();
+                            if (playPromise) playPromise.catch(e => console.log('Autoplay prevented', e));
+
                             entry.target.classList.remove('paused');
 
                             // Preload neighbors
                             preloadVideo(index + 1);
                             preloadVideo(index - 1);
 
-                            // Increment view count (fire and forget)
-                            if (!video.dataset.viewed) {
+                            // Increment view count
+                            if (!video.dataset.viewed && video.parentElement.dataset.id) {
                                 video.dataset.viewed = "true";
                                 fetch(`${API_BASE}/videos/details/${video.parentElement.dataset.id}`).catch(() => { });
                             }
 
-                            // CLEANUP DISTANT VIDEOS
                             cleanupDistantVideos(index);
 
                         } else {
-                            // Pause
                             video.pause();
-                            video.currentTime = 0;
                         }
                     });
                 }, options);
