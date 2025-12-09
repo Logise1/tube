@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Video - TubeClone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f0f0f;
+            color: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="bg-[#202020] px-6 py-3 flex justify-between items-center h-14 fixed top-0 w-full z-20 shadow-sm">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="flex items-center gap-1 text-white font-bold text-xl tracking-tight">
+                <span class="text-red-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-7 h-7">
+                        <path
+                            d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.109-.766.248-1.14.406a1.859 1.859 0 0 0-.917 1.81c.213.67.436 1.345.678 2.019.239.664.49 1.334.755 2.001.266.666.538 1.336.815 2.001.05.122.105.235.165.341a2.312 2.312 0 0 1 1.818 1.521c.241.673.497 1.348.775 2.016.096.23.21.432.35.602a.965.965 0 0 0 .858.468c.373 0 .745-.083 1.11-.253.25-.11.498-.246.746-.395.27-.168.541-.334.811-.5.272-.167.545.333-.82.497.054-.031.109-.06.163-.09.053.03.107.059.162.09.274.164.547.33.82.497.27.161.539.327.811.5.248.149.496.285.746.395-.365.17.737.253 1.11.253.336 0 .65-.092.936-.264.129-.08.235-.19.336-.316a2.64 2.64 0 0 0 .257-.384c.278-.668.533-1.343.774-2.016a2.31 2.31 0 0 1 1.818-1.521c.06-.106.115-.219.165-.341.277-.665.549-1.335.815-2.001.239-.665.49-.1349.728-2.019a1.859 1.859 0 0 0-.917-1.81c-.374-.158-.76-.297-1.14-.406a2.312 2.312 0 0 1-1.641-1.055c-.278-.668-.533-1.343-.774-2.016-.096-.23-.21-.432-.35-.602a.965.965 0 0 0-.858-.468c-.373 0-.745.083-1.11.253-.25.11-.498.246-.746.395-.27.168-.541.334-.811.5-.272.167-.545.333-.82.497-.054.031-.109.06.163-.09-.053.03-.107.059.162.09-.274.164-.547-.33-.82-.497-.27-.161-.539-.327-.811-.5-.248-.149-.496.285-.746.395-.365.17-.737.253-1.11.253-.336 0-.65.092-.936-.264.129-.08.235-.19.336-.316-.089.109-.164.237-.257.384z" />
+                    </svg>
+                </span>
+                TubeClone
+            </a>
+        </div>
+        <div id="auth-section">
+            <a href="login.html"
+                class="bg-[#282828] border border-gray-600 px-4 py-1.5 rounded-full text-blue-400 font-semibold text-sm hover:bg-[#383838]">
+                Iniciar Sesión
+            </a>
+        </div>
+    </header>
+
+    <main class="pt-14 max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-6 p-6">
+        <!-- COLUMNA IZQUIERDA: VIDEO Y COMENTARIOS -->
+        <div class="flex-1">
+            <!-- VIDEO PLAYER -->
+            <div class="w-full aspect-video bg-black rounded-xl overflow-hidden shadow-lg border border-[#333]">
+                <video id="main-player" class="w-full h-full" controls autoplay></video>
+            </div>
+
+            <!-- VIDEO INFO -->
+            <div class="mt-4 pb-4 border-b border-[#333]">
+                <h1 id="video-title" class="text-xl font-bold line-clamp-2">Cargando título...</h1>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between mt-2 gap-4">
+                    <!-- CANAL INFO -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-red-500 flex items-center justify-center text-lg font-bold cursor-pointer"
+                            id="channel-avatar">
+                            ?
+                        </div>
+                        <div>
+                            <h3 id="channel-name"
+                                class="font-bold text-white leading-tight cursor-pointer hover:text-gray-300">...</h3>
+                            <p id="channel-subs" class="text-xs text-gray-400">0 suscriptores</p>
+                        </div>
+                        <button id="subscribe-btn"
+                            class="bg-white text-black px-4 py-2 rounded-full font-bold text-sm hover:bg-gray-200 ml-4 transition">
+                            Suscribirse
+                        </button>
+                    </div>
+
+                    <!-- UTILS -->
+                    <div class="flex gap-2">
+                        <button id="like-btn"
+                            class="flex items-center gap-2 bg-[#282828] px-4 py-2 rounded-full text-sm font-medium hover:bg-[#3e3e3e] transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5">
+                                </path>
+                            </svg>
+                            <span id="like-count">0</span>
+                        </button>
+                        <button id="share-btn"
+                            class="bg-[#282828] px-4 py-2 rounded-full text-sm font-medium hover:bg-[#3e3e3e] flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                                </path>
+                            </svg>
+                            Compartir
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DESCRIPTION -->
+                <div class="mt-4 bg-[#282828] p-3 rounded-xl text-sm hover:bg-[#333] cursor-pointer transition">
+                    <p class="font-bold mb-1"><span id="video-views">0</span> vistas • <span id="video-date">--</span>
+                    </p>
+                    <p id="video-desc" class="text-gray-200 whitespace-pre-wrap">...</p>
+                </div>
+            </div>
+
+            <!-- COMMENTS SECTION -->
+            <div class="mt-6">
+                <h3 class="text-xl font-bold mb-4">Comentarios</h3>
+
+                <!-- ADD COMMENT -->
+                <div class="flex gap-4 mb-6" id="add-comment-section">
+                    <div class="w-10 h-10 rounded-full bg-gray-600 flex-shrink-0 flex items-center justify-center font-bold text-white uppercase"
+                        id="my-avatar"></div>
+                    <div class="flex-1">
+                        <input type="text" id="comment-input"
+                            class="w-full bg-transparent border-b border-[#333] focus:border-white outline-none pb-1 text-white placeholder-gray-500"
+                            placeholder="Añade un comentario...">
+                        <div class="flex justify-end gap-2 mt-2 hidden" id="comment-actions">
+                            <button id="cancel-comment"
+                                class="px-3 py-1.5 rounded-full hover:bg-[#333] text-sm font-bold">Cancelar</button>
+                            <button id="submit-comment"
+                                class="px-3 py-1.5 bg-blue-500 text-black rounded-full text-sm font-bold hover:bg-blue-400 disabled:opacity-50 disabled:bg-[#282828] disabled:text-gray-500"
+                                disabled>Comentar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LIST -->
+                <div id="comments-list" class="space-y-4">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: RECOMENDADOS -->
+        <div class="lg:w-[350px] flex-shrink-0 mb-10">
+            <h3 class="text-lg font-bold mb-4 hidden lg:block">Recomendados</h3>
+            <div id="recommendations" class="flex flex-col gap-2">
+                <!-- Dynamic -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = 'https://aritube.logise1123.workers.dev/api';
+        const urlParams = new URLSearchParams(window.location.search);
+        const videoId = urlParams.get('v');
+
+        const token = localStorage.getItem('tubeclone_jwt_token');
+        let currentUser = null;
+        let startVideoOwnerId = null; // Store owner ID for subscription
+
+        // AUTH & INIT
+        if (token) {
+            try {
+                currentUser = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                document.getElementById('auth-section').innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white cursor-pointer" onclick="window.location.href='profile.html?u=${currentUser.userId}'" title="${currentUser.username}">
+                        ${currentUser.username[0].toUpperCase()}
+                    </div>
+                `;
+                const myAvatar = document.getElementById('my-avatar');
+                if (myAvatar) {
+                    myAvatar.textContent = currentUser.username[0].toUpperCase();
+                    myAvatar.classList.add('bg-purple-600');
+                    myAvatar.classList.remove('bg-gray-600');
+                }
+            } catch (e) { }
+        }
+
+        if (!videoId) {
+            document.body.innerHTML = '<h1 class="text-center mt-20 text-2xl">Video no especificado</h1>';
+        } else {
+            loadVideoData();
+        }
+
+        async function loadVideoData() {
+            // 1. Get Video Details
+            const res = await fetch(`${API_BASE}/videos/details/${videoId}`);
+            if (!res.ok) return;
+            const video = await res.json();
+
+            startVideoOwnerId = video.userId; // Save for sub button
+
+            // Render basic info
+            document.getElementById('main-player').src = video.url;
+            document.getElementById('video-title').textContent = video.title;
+            document.getElementById('video-desc').textContent = video.description || 'Sin descripción';
+            document.getElementById('video-views').textContent = video.views || 0;
+            document.getElementById('like-count').textContent = video.likes || 0;
+            document.getElementById('video-date').textContent = new Date(video.uploadDate).toLocaleDateString();
+
+            // 2. Get Channel Info
+            if (video.userId) {
+                fetch(`${API_BASE}/users/${video.userId}`)
+                    .then(r => r.json())
+                    .then(user => {
+                        const channelName = document.getElementById('channel-name');
+                        const channelAvatar = document.getElementById('channel-avatar');
+
+                        channelName.textContent = user.username || 'Usuario';
+                        channelAvatar.textContent = (user.username || '?')[0].toUpperCase();
+                        document.getElementById('channel-subs').textContent = `${user.subscribers || 0} suscriptores`;
+
+                        // Links al perfil
+                        channelName.onclick = () => window.location.href = `profile.html?u=${video.userId}`;
+                        channelAvatar.onclick = () => window.location.href = `profile.html?u=${video.userId}`;
+                    });
+            }
+
+            // 3. Load Comments
+            loadComments();
+
+            // 4. Load Recommendations
+            fetch(`${API_BASE}/videos/all`)
+                .then(r => r.json())
+                .then(videos => {
+                    const recContainer = document.getElementById('recommendations');
+                    const list = Array.isArray(videos) ? videos : Object.values(videos);
+                    const recs = list.filter(v => v.id !== videoId).slice(0, 10);
+
+                    recContainer.innerHTML = recs.map(v => `
+                        <a href="watch.html?v=${v.id}" class="flex gap-2 group cursor-pointer mb-2">
+                            <div class="w-40 h-24 rounded-lg bg-gray-800 overflow-hidden flex-shrink-0 relative">
+                                <img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:opacity-90 transition">
+                                <span class="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">${v.duration || '0:00'}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-white line-clamp-2 group-hover:text-gray-300 leading-snug mb-1">${v.title}</h4>
+                                <p class="text-xs text-gray-400 hover:text-white transition">${v.userId || '...'}</p>
+                                <p class="text-xs text-gray-400">${v.views || 0} vistas</p>
+                            </div>
+                        </a>
+                     `).join('');
+                });
+        }
+
+        async function loadComments() {
+            try {
+                const res = await fetch(`${API_BASE}/comments/${videoId}`);
+                const comments = await res.json();
+                const list = document.getElementById('comments-list');
+
+                if (!Array.isArray(comments) || !comments.length) {
+                    list.innerHTML = '<p class="text-sm text-gray-400 py-4">Sé el primero en comentar.</p>';
+                    return;
+                }
+
+                list.innerHTML = comments.map(c => `
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-[#5c6bc0] flex items-center justify-center font-bold text-xs text-white flex-shrink-0 cursor-pointer" onclick="window.location.href='profile.html?u=${c.userId}'">
+                        ${c.username[0].toUpperCase()}
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-xs font-bold text-white cursor-pointer hover:underline" onclick="window.location.href='profile.html?u=${c.userId}'">@${c.username}</span>
+                            <span class="text-xs text-gray-400">${new Date(c.date).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-sm text-gray-200">${c.text}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            } catch (e) { console.error('Error loading comments', e); }
+        }
+
+        // --- INTERACCIONES UI ---
+
+        // Like Button
+        document.getElementById('like-btn').onclick = async () => {
+            if (!currentUser) return window.location.href = 'login.html';
+
+            const btn = document.getElementById('like-btn');
+            const countSpan = document.getElementById('like-count');
+
+            let currentLikes = parseInt(countSpan.textContent) || 0;
+            countSpan.textContent = currentLikes + 1;
+            btn.classList.add('text-blue-400');
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/videos/like/${videoId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Error al dar like');
+            } catch (e) {
+                console.error(e);
+                countSpan.textContent = currentLikes;
+                btn.classList.remove('text-blue-400');
+                btn.disabled = false;
+                alert('Error al conectar con servidor');
+            }
+        };
+
+        // Subscribe Button
+        const subBtn = document.getElementById('subscribe-btn');
+        subBtn.onclick = async () => {
+            if (!currentUser) return window.location.href = 'login.html';
+            if (!startVideoOwnerId) return;
+
+            subBtn.innerText = 'Suscrito';
+            subBtn.classList.replace('bg-white', 'bg-gray-700');
+            subBtn.classList.replace('text-black', 'text-white');
+            subBtn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/videos/subscribe/${startVideoOwnerId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || 'Error');
+                }
+                // Si es éxito, mantener estado.
+            } catch (e) {
+                alert('Error: ' + e.message);
+                // Revert
+                subBtn.innerText = 'Suscribirse';
+                subBtn.classList.replace('bg-gray-700', 'bg-white');
+                subBtn.classList.replace('text-white', 'text-black');
+                subBtn.disabled = false;
+            }
+        };
+
+        // Share Button
+        document.getElementById('share-btn').onclick = () => {
+            navigator.clipboard.writeText(window.location.href)
+                .then(() => alert('¡Enlace copiado al portapapeles!'))
+                .catch(() => alert('No se pudo copiar el enlace'));
+        };
+
+        // Comment Interactions
+        const input = document.getElementById('comment-input');
+        const actions = document.getElementById('comment-actions');
+        const submitBtn = document.getElementById('submit-comment');
+        const cancelBtn = document.getElementById('cancel-comment');
+
+        input.addEventListener('focus', () => actions.classList.remove('hidden'));
+
+        input.addEventListener('input', (e) => {
+            submitBtn.disabled = !e.target.value.trim();
+        });
+
+        cancelBtn.onclick = () => {
+            input.value = '';
+            submitBtn.disabled = true;
+            actions.classList.add('hidden');
+        };
+
+        submitBtn.onclick = async () => {
+            if (!currentUser) return window.location.href = 'login.html';
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Enviando...';
+
+            try {
+                const res = await fetch(`${API_BASE}/comments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ videoId, text: input.value })
+                });
+                if (res.ok) {
+                    input.value = '';
+                    actions.classList.add('hidden');
+                    loadComments();
+                } else {
+                    alert('Error enviando comentario');
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Comentar';
+            }
+        };
+    </script>
+</body>
+
+</html>
